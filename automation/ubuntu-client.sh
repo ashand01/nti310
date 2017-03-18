@@ -13,15 +13,14 @@ git clone https://github.com/ashand01/nti310.git /tmp/NTI310
 
 
 #adjust /etc/ldap/ldap.conf file for ip address and fqdn
-ip1=$(gcloud compute instances list | grep ldap-server | awk '{print $4}')
-sed -i "s,#URI\tldap:\/\/ldap.example.com ldap:\/\/ldap-master.example.com:666,URI\tldaps:\/\/$ip1,g" /etc/ldap/ldap.conf
+sed -i "s,#URI\tldap:\/\/ldap.example.com ldap:\/\/ldap-master.example.com:666,URI\tldaps:\/\/10.138.0.4,g" /etc/ldap/ldap.conf
 sed -i 's/#BASE\tdc=example,dc=com/BASE\tdc=ali,dc=local/g' /etc/ldap/ldap.conf
 sed -i -e '$aTLS_REQCERT allow' /etc/ldap/ldap.conf
 
 cp /tmp/NTI310/config_files/ldap.conf /etc/ldap.conf
-sed -i "s,uri ldaps:\/\/NEEDTOADDIP\/,uri ldaps:\/\/$ip1\/,g" /etc/ldap.conf
+sed -i "s,uri ldaps:\/\/NEEDTOADDIP\/,uri ldaps:\/\/10.138.0.4\/,g" /etc/ldap.conf
 cp /tmp/NTI310/config_files/nslcd.conf /etc/nslcd.conf
-sed -i "s,uri ldaps:\/\/NEEDTOADDIP\/,uri ldaps:\/\/$ip1\/,g" /etc/nslcd.conf
+sed -i "s,uri ldaps:\/\/NEEDTOADDIP\/,uri ldaps:\/\/10.138.0.4\/,g" /etc/nslcd.conf
 
 sed -i 's,passwd:         compat,passwd:         ldap compat,g' /etc/nsswitch.conf
 sed -i 's,group:          compat,group:          ldap compat,g' /etc/nsswitch.conf
