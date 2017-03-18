@@ -13,8 +13,8 @@ echo "Setting the project for Configuration..."
 gcloud config set project final-4-161918
 
 echo "Setting zone/region for Configuration..."
-gcloud config set compute/zone us-west1-c
-final-4-161918
+gcloud config set compute/zone us-west1-b
+
 gcloud config set compute/region us-west1
 
 echo "Creating firewall-rules..."
