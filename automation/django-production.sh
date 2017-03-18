@@ -88,7 +88,7 @@ sudo setenforce 0
 sudo systemctl restart httpd
 
 echo "Django is now accessible from the web at [server IP] and admin site and [server IP]/admin"
-ip1=$(gcloud compute instances list | grep postgres-b-staging | awk '{print $4}')
+
 #configure django database settings
 sed -i "s/        'ENGINE': 'django.db.backends.sqlite3',/        'ENGINE': 'django.db.backends.postgresql_psycopg2',/g" /opt/django/project1/project1/settings.py
 sed -i "s/        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),/        'NAME': 'project1',/g" /opt/django/project1/project1/settings.py
@@ -98,7 +98,7 @@ sed -i "82i 'HOST': 'NEEDTOADDIP'," /opt/django/project1/project1/settings.py
 sed -i "83i 'PORT': '5432'," /opt/django/project1/project1/settings.py
 sed -i "s/'USER': 'project1',/        'USER': 'project1',/g" /opt/django/project1/project1/settings.py
 sed -i "s/'PASSWORD': 'P@ssw0rd1',/        'PASSWORD': 'P@ssw0rd1',/g" /opt/django/project1/project1/settings.py
-sed -i "s/'HOST': 'NEEDTOADDIP',/        'HOST': '$ip1',/g" /opt/django/project1/project1/settings.py
+sed -i "s/'HOST': 'NEEDTOADDIP',/        'HOST': '10.138.0.8',/g" /opt/django/project1/project1/settings.py
 sed -i "s/'PORT': '5432',/        'PORT': '5432',/g" /opt/django/project1/project1/settings.py
 
 #prepare django for postgresql integration -- install postgres dev packages
