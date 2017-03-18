@@ -5,15 +5,23 @@
 apt-get --yes update && apt-get --yes upgrade && apt-get --yes dist-upgrade
 
 export DEBIAN_FRONTEND=noninteractive
-apt-get --yes install libpam-ldap nscd
+apt-get --yes install libnss-ldap libpam-ldap ldap-utils nslcd
 unset DEBIAN_FRONTEND
 
 
 git clone https://github.com/ashand01/nti310.git /tmp/NTI310
 
 
-cp /tmp/NTI310/config_files/ldap.conf /etc/ldap.conf
+#adjust /etc/ldap/ldap.conf file for ip address and fqdn
+ip1=$(gcloud compute instances list | grep ldap-server | awk '{print $4}')
+sed -i "s,#URI\tldap:\/\/ldap.example.com ldap:\/\/ldap-master.example.com:666,URI\tldaps:\/\/$ip1,g" /etc/ldap/ldap.conf
+sed -i 's/#BASE\tdc=example,dc=com/BASE\tdc=ali,dc=local/g' /etc/ldap/ldap.conf
+sed -i -e '$aTLS_REQCERT allow' /etc/ldap/ldap.conf
 
+cp /tmp/NTI310/config_files/ldap.conf /etc/ldap.conf
+sed -i "s,uri ldaps:\/\/NEEDTOADDIP\/,uri ldaps:\/\/$ip1\/,g" /etc/ldap.conf
+cp /tmp/NTI310/config_files/nslcd.conf /etc/nslcd.conf
+sed -i "s,uri ldaps:\/\/NEEDTOADDIP\/,uri ldaps:\/\/$ip1\/,g" /etc/nslcd.conf
 
 sed -i 's,passwd:         compat,passwd:         ldap compat,g' /etc/nsswitch.conf
 sed -i 's,group:          compat,group:          ldap compat,g' /etc/nsswitch.conf
@@ -49,14 +57,14 @@ mkdir -p /mnt/nfs/var/config
 service nfs-idmapd start
 
 #mount the volumes
-mount -v -t nfs 10.128.0.2:/home /mnt/nfs/home
-mount -v -t nfs 10.128.0.2:/var/dev /mnt/nfs/var/dev
-mount -v -t nfs 10.128.0.2:/var/config /mnt/nfs/var/config
+mount -v -t nfs nfs-server:/home /mnt/nfs/home
+mount -v -t nfs nfs-server:/var/dev /mnt/nfs/var/dev
+mount -v -t nfs nfs-server:/var/config /mnt/nfs/var/config
 
 #make changes mounting the nfs volumes permanent by editing fstab
-echo "10.128.0.2:/home /mnt/nfs/home   nfs     defaults 0 0" >> /etc/fstab
-echo "10.128.0.2:/var/dev /mnt/nfs/var/dev    nfs     defaults 0 0" >> /etc/fstab
-echo "10.128.0.2:/var/config /mnt/nfs/var/config    nfs     defaults 0 0" >> /etc/fstab
+echo "nfs-server:/home /mnt/nfs/home   nfs     defaults 0 0" >> /etc/fstab
+echo "nfs-server:/var/dev /mnt/nfs/var/dev    nfs     defaults 0 0" >> /etc/fstab
+echo "nfs-server:/var/config /mnt/nfs/var/config    nfs     defaults 0 0" >> /etc/fstab
 
 #install tree to verify mount
 apt-get -y install tree
@@ -68,6 +76,13 @@ tree /mnt
 #rsyslog client-side configuration -- run as root
 #must be run on each rsyslog client
 
+ip=$(gcloud compute instances list | grep rsyslog-server | awk '{print $4}')
 
-echo "*.info;mail.none;authpriv.none;cron.none    @10.128.0.5:514" >> /etc/rsyslog.conf
-service rsyslog restart                                     #ubuntu command
+echo "*.info;mail.none;authpriv.none;cron.none    @$ip" >> /etc/rsyslog.conf
+
+
+sudo service rsyslog restart        
+
+systemctl restart sshd
+systemctl restart nslcd
+systemctl restart systemd-logind.service
