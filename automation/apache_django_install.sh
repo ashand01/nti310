@@ -76,3 +76,42 @@ cd /opt/django/project1
 #python manage.py migrate
 
 echo "Django is now accessible from the web at [server IP]:8000..."
+
+sudo yum -y install python-devel postgresql-devel
+sudo yum -y install gcc
+
+#install psycopg2 to allow us to use the project1 database on postgres server
+
+pip install psycopg2
+
+#configure django database settings
+ip1=$(gcloud compute instances list | grep postgres-a-test | awk '{print $4}')
+
+
+sed -i "s/        'ENGINE': 'django.db.backends.sqlite3',/        'ENGINE': 'django.db.backends.postgresql_psycopg2',/g" /opt/django/project1/project1/settings.py
+sed -i "s/        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),/        'NAME': 'project1',/g" /opt/django/project1/project1/settings.py
+sed -i "80i 'USER': 'project1'," /opt/django/project1/project1/settings.py
+sed -i "81i 'PASSWORD': 'P@ssw0rd1'," /opt/django/project1/project1/settings.py
+sed -i "82i 'HOST': 'NEEDTOADDIP'," /opt/django/project1/project1/settings.py
+sed -i "83i 'PORT': '5432'," /opt/django/project1/project1/settings.py
+sed -i "s/'USER': 'project1',/        'USER': 'project1',/g" /opt/django/project1/project1/settings.py
+sed -i "s/'PASSWORD': 'P@ssw0rd1',/        'PASSWORD': 'P@ssw0rd1',/g" /opt/django/project1/project1/settings.py
+sed -i "s/'HOST': 'NEEDTOADDIP',/        'HOST': '$ip1',/g" /opt/django/project1/project1/settings.py
+sed -i "s/'PORT': '5432',/        'PORT': '5432',/g" /opt/django/project1/project1/settings.py
+
+
+#migrate databasae
+
+cd /opt/django/project1
+python manage.py makemigrations #*******
+python manage.py migrate
+
+#create user
+
+python manage.py createsuperuser #<-- will allow admin login
+#manage.py docs for automataing
+#python manage.py syncdb --noinput
+echo "from django.contrib.auth.models import User; User.objects.create_superuser('ali', 'ashand01@seattlecentral.edu', 'P@ssw0rd1')" | python manage.py shell
+
+#start djanngo server in the background <-- use fg to bring the process to the foreground and ctrl-c to quit
+python manage.py runserver 0.0.0.0:8000&
